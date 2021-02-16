@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+dotfiles_dir="${HOME:?}/.dotfiles"
+
 error() {
   echo "${*:?}" > /dev/stderr
   exit 1
@@ -23,6 +25,14 @@ check_and_install_requirements() {
     # shellcheck disable=SC2068
     sudo apt install ${dependencies_to_install[@]} -yqq # intentional word splitting
   fi
+
+  if [ ! -d "${dotfiles_dir}/.git" ]; then
+    git clone https://github.com/lilianmoraru/dotfiles.git "${dotfiles_dir}"
+    (
+      cd "${dotfiles_dir}"
+      git remote set-url origin git@github.com:lilianmoraru/dotfiles.git
+    )
+  fi
 }
 
 setup_cli() {
@@ -31,7 +41,10 @@ setup_cli() {
 }
 
 setup() {
-  eval "setup_${1:?}"
+  (
+    cd "${dotfiles_dir}"
+    eval "setup_${1:?}"
+  )
 }
 
 main() {
@@ -40,3 +53,4 @@ main() {
 }
 
 main "$@"
+echo "Setup finished!"
