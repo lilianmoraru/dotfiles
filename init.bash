@@ -35,6 +35,10 @@ check_and_install_requirements() {
   fi
 }
 
+setup_env() {
+  stow scripts
+}
+
 setup_cli() {
   stow zsh
   stow git
@@ -50,6 +54,7 @@ setup() {
 main() {
   check_and_install_requirements
   setup cli
+  setup env
 }
 
 main "$@"

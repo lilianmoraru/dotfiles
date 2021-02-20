@@ -1,8 +1,8 @@
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+if [[ -r "${XDG_CACHE_HOME:-${HOME:?}/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-${HOME:?}/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
 # Set up the prompt
@@ -43,7 +43,7 @@ zstyle ':completion:*' verbose true
 zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#)*=0=01;31'
 zstyle ':completion:*:kill:*' command 'ps -u $USER -o pid,%cpu,tty,cputime,cmd'
 
-source "$HOME/git/antigen.zsh"
+source "${HOME:?}/git/antigen.zsh"
 
 # Load the oh-my-zsh's library
 antigen use oh-my-zsh
@@ -62,28 +62,24 @@ antigen bundle zsh-users/zsh-syntax-highlighting
 antigen bundle zsh-users/zsh-autosuggestions
 
 # Load the theme
-#antigen theme agnoster
 antigen theme romkatv/powerlevel10k
 
 # Apply antigen configs
 antigen apply
 
-[[ -s "$HOME/.autojump/etc/profile.d/autojump.sh" ]] && source "$HOME/.autojump/etc/profile.d/autojump.sh"
+[[ -s "${HOME:?}/.autojump/etc/profile.d/autojump.sh" ]] && source "${HOME:?}/.autojump/etc/profile.d/autojump.sh" || :
 autoload -U compinit && compinit -u
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 # Aliases
 alias a="j" # Autojump alias: ex "a gdb"
 
 # exporting variables
-#export RPROMPT="%{$fg_bold[green]%}%*%{$reset_color%}"
 export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=cyan"
 
-# Overriding agnoster $USER@$MACHINE display
-#prompt_context() {
-#  if [[ "$USER" != "$DEFAULT_USER" || -n "$SSH_CLIENT" ]]; then
-#    prompt_segment black default "%(!.%{%F{yellow}%}.)$USER"
-#  fi
-#}
+# Add "scripts" dir to PATH
+export PATH="${HOME:?}/scripts:${PATH}"
 
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+[[ ! -s "${HOME:?}/.zshrc_ext" ]] || source "${HOME:?}/.zshrc_ext"
