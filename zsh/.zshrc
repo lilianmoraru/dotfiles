@@ -83,3 +83,4 @@ export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=cyan"
 export PATH="${HOME:?}/scripts:${PATH}"
 
 [[ ! -s "${HOME:?}/.zshrc_ext" ]] || source "${HOME:?}/.zshrc_ext"
+fpath+=${ZDOTDIR:-~}/.zsh_functions

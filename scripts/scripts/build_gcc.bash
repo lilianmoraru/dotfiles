@@ -13,7 +13,7 @@ source_dir="${git_dir:?}/gcc"
 build_dir="${git_dir:?}/gcc-build"
 first_stage_install_prefix="${install_prefix_root:?}/gcc-stage1"
 install_prefix="${install_prefix_root:?}/gcc"
-release_branch="releases/gcc-10"
+release_branch="releases/gcc-11"
 target_arch="native"
 
 error() {
