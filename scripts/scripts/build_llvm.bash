@@ -16,7 +16,7 @@ install_prefix="${install_prefix_root:?}/llvm"
 
 # Include What You Use vars
 iwyu_source_dir="${git_dir:?}/iwyu"
-iwyu_branch="${IWYU_BRANCH:-clang_11}"
+iwyu_branch="${IWYU_BRANCH:-clang_12}"
 
 error() {
   echo "${*:?}" > /dev/stderr
@@ -94,19 +94,6 @@ check_requirements() {
     fi
   fi
 }
-
-# vvvvv Deprecated(SVN repo layout) vvvvv
-add_templight() {
-  (
-    cd "${llvm_source_dir:?}" || exit 1
-    rm -f "tools/clang/tools/templight"
-    ln -s "$(dirname "${llvm_source_dir:?}")/templight" "tools/clang/tools/templight"
-    update_project "tools/clang/tools/templight"  "master"
-
-    echo "add_subdirectory(templight)" >> "tools/clang/tools/CMakeLists.txt"
-  )
-}
-# ^^^^^ Deprecated ^^^^^
 
 update_project() {
   local -r dir="${1:?}"

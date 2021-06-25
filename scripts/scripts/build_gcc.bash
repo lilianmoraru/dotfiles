@@ -209,7 +209,7 @@ build_gcc() {
   (
     update_project "${source_dir:?}" "${release_branch:?}"
     get_dependency "gmp"  "gmp-6.2.1.tar.xz"  "fd4829912cddd12f84181c3451cc752be224643e87fac497b69edddadc49b4f2" "https://gmplib.org/download/gmp/"
-    get_dependency "isl"  "isl-0.23.tar.xz"   "5efc53efaef151301f4e7dde3856b66812d8153dede24fab17673f801c8698f2" "http://isl.gforge.inria.fr/"
+    get_dependency "isl"  "isl-0.24.tar.xz"   "043105cc544f416b48736fff8caf077fb0663a717d06b1113f16e391ac99ebad" "http://isl.gforge.inria.fr/"
     get_dependency "mpfr" "mpfr-4.1.0.tar.xz" "0c98a3f1732ff6ca4ea690552079da9c597872d30e96ec28414ee23c95558a7f" "http://www.mpfr.org/mpfr-current/"
     get_dependency "mpc"  "mpc-1.2.1.tar.gz"  "17503d2c395dfcf106b622dc142683c1199431d095367c6aacba6eec30340459" "https://ftp.gnu.org/gnu/mpc/"
 
