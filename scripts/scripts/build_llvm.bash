@@ -144,6 +144,7 @@ install_llvm() {
       -DCMAKE_SHARED_LINKER_FLAGS="-Wl,--as-needed -Wl,--build-id=sha1" \
       -DLLVM_TARGETS_TO_BUILD:STRING=Native \
       -DENABLE_LINKER_BUILD_ID=ON \
+      -DLLVM_BUILD_LLVM_DYLIB=ON \
       -DLLVM_ENABLE_LLD=ON \
       -DLLVM_ENABLE_PIC=ON \
       -DLLVM_ENABLE_RTTI=ON \
