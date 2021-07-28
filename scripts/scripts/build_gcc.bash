@@ -127,7 +127,7 @@ install_gcc() {
       --disable-werror \
       --with-arch=${target_arch} \
       --with-tune=${target_arch} \
-      --with-glibc-version=2.31
+      --with-glibc-version=2.33
 
     make -j${jobs:?}
   else
@@ -152,7 +152,7 @@ install_gcc() {
       --disable-werror \
       --with-arch=${target_arch} \
       --with-tune=${target_arch} \
-      --with-glibc-version=2.31
+      --with-glibc-version=2.33
 
     make -j${jobs:?} \
       CFLAGS_FOR_BUILD="${cflags}" \

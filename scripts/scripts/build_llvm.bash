@@ -10,7 +10,7 @@ install_prefix_root="${HOME:?}/.tools"
 # LLVM vars
 llvm_source_dir="${git_dir}/llvm"
 llvm_build_dir="${git_dir}/llvm-build"
-llvm_branch="${LLVM_BRANCH:-release/12.x}"
+llvm_branch="${LLVM_BRANCH:-release/13.x}"
 first_stage_install_prefix="${install_prefix_root:?}/llvm-stage1"
 install_prefix="${install_prefix_root:?}/llvm"
 
