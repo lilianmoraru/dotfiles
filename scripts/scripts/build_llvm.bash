@@ -42,12 +42,14 @@ check_requirements() {
   local dependencies_to_install=()
   for dependency in "${build_dependencies[@]}"; do
     if ! dpkg -l "${dependency}" | cut -d ' ' -f1 | grep "ii" >& /dev/null; then
+      # shellcheck disable=SC2206
       dependencies_to_install=(${dependencies_to_install[@]} "${dependency}")
     fi
   done
 
   if [ "${#dependencies_to_install[@]}" -gt 0 ]; then
     echo "Installing LLVM build dependencies:"
+    # shellcheck disable=SC2068
     sudo apt install ${dependencies_to_install[@]} -yqq # intentional word splitting
   fi
 
@@ -209,7 +211,7 @@ main() {
   update_project "${llvm_source_dir:?}" "${llvm_branch:?}"
   LLVM_FIRST_RUN=1  build_llvm "$@"
   LLVM_FIRST_RUN='' build_llvm "$@"
-  build_iwyu
+#  build_iwyu
 
   echo
   echo "Finished building:"

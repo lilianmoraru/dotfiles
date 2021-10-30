@@ -37,12 +37,14 @@ check_requirements() {
   local dependencies_to_install=()
   for dependency in "${build_dependencies[@]}"; do
     if ! dpkg -l "${dependency}" | cut -d ' ' -f1 | grep "ii" >& /dev/null; then
+      # shellcheck disable=SC2206
       dependencies_to_install=(${dependencies_to_install[@]} "${dependency}")
     fi
   done
 
   if [ "${#dependencies_to_install[@]}" -gt 0 ]; then
     echo "Installing LLVM build dependencies:"
+    # shellcheck disable=SC2068
     sudo apt install ${dependencies_to_install[@]} -yqq # intentional word splitting
   fi
 
@@ -108,9 +110,13 @@ install_llvm() {
   rm -rf ./*
   cmake "${llvm_source_dir:?}/llvm" \
     -DCMAKE_BUILD_TYPE=Release \
-    -DLLVM_ENABLE_PROJECTS:STRING="bolt" \
-    -DCMAKE_CXX_FLAGS="-O3 -mtune=native -march=native -m64 -mavx -fomit-frame-pointer -fno-reorder-blocks-and-partition" \
-    -DCMAKE_C_FLAGS="-O3 -mtune=native -march=native -m64 -mavx -fomit-frame-pointer -fno-reorder-blocks-and-partition" \
+    -DLLVM_ENABLE_PROJECTS:STRING="clang;lld;bolt" \
+    -DCMAKE_C_COMPILER="${install_prefix_root:?}/llvm/bin/clang" \
+    -DCMAKE_CXX_COMPILER="${install_prefix_root:?}/llvm/bin/clang++" \
+    -DCMAKE_RANLIB="${install_prefix_root:?}/llvm/bin/llvm-ranlib" \
+    -DCMAKE_AR="${install_prefix_root:?}/llvm/bin/llvm-ar" \
+    -DCMAKE_CXX_FLAGS="-O3 -mtune=native -march=native -m64 -mavx -fomit-frame-pointer" \
+    -DCMAKE_C_FLAGS="-O3 -mtune=native -march=native -m64 -mavx -fomit-frame-pointer" \
     -DCMAKE_EXE_LINKER_FLAGS="-Wl,--as-needed -Wl,--build-id=sha1 -Wl,--push-state -Wl,-whole-archive -ljemalloc_pic -Wl,--pop-state -lpthread -lstdc++ -lm -ldl" \
     -DCMAKE_MODULE_LINKER_FLAGS="-Wl,--as-needed -Wl,--build-id=sha1" \
     -DCMAKE_SHARED_LINKER_FLAGS="-Wl,--as-needed -Wl,--build-id=sha1" \
@@ -118,10 +124,15 @@ install_llvm() {
     -DLLVM_ENABLE_ASSERTIONS=ON \
     -DCMAKE_POLICY_DEFAULT_CMP0069=NEW \
     -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
-    -DLLVM_INCLUDE_TESTS=OFF \
+    -DLLVM_INCLUDE_TESTS=ON \
     -DLLVM_INCLUDE_EXAMPLES=OFF \
     -DLLVM_BUILD_TESTS=OFF \
     -DLLVM_BUILD_EXAMPLES=OFF \
+    -DLLVM_BUILD_LLVM_DYLIB=ON \
+    -DENABLE_LINKER_BUILD_ID=ON \
+    -DLLVM_ENABLE_LLD=ON \
+    -DLLVM_ENABLE_PIC=ON \
+    -DLLVM_ENABLE_RTTI=ON \
     -DPYTHON_EXECUTABLE:FILEPATH=/usr/bin/python3 \
     -DCMAKE_INSTALL_PREFIX="${install_prefix:?}" \
     -G Ninja
