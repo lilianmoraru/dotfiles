@@ -8,15 +8,17 @@ git_dir="${HOME:?}/git"
 install_prefix_root="${HOME:?}/.tools"
 
 # LLVM vars
+LLVM_BRANCH=main # temporary, can comment out
 llvm_source_dir="${git_dir}/llvm"
 llvm_build_dir="${git_dir}/llvm-build"
 llvm_branch="${LLVM_BRANCH:-release/13.x}"
 first_stage_install_prefix="${install_prefix_root:?}/llvm-stage1"
+second_stage_install_prefix="${install_prefix_root:?}/llvm-stage2" # instrumented build
 install_prefix="${install_prefix_root:?}/llvm"
 
 # Include What You Use vars
 iwyu_source_dir="${git_dir:?}/iwyu"
-iwyu_branch="${IWYU_BRANCH:-clang_12}"
+iwyu_branch="${IWYU_BRANCH:-clang_13}"
 
 error() {
   echo "${*:?}" > /dev/stderr
@@ -34,11 +36,12 @@ check_llvm_executable() {
   fi
 }
 
-check_requirements() {
+install_ubuntu_dep() {
   local -r build_dependencies=(
     git git-lfs gcc g++ build-essential cmake ninja-build
     libpython3-dev libxml2-dev liblzma-dev libedit-dev python3-sphinx swig
   )
+
   local dependencies_to_install=()
   for dependency in "${build_dependencies[@]}"; do
     if ! dpkg -l "${dependency}" | cut -d ' ' -f1 | grep "ii" >& /dev/null; then
@@ -51,6 +54,42 @@ check_requirements() {
     echo "Installing LLVM build dependencies:"
     # shellcheck disable=SC2068
     sudo apt install ${dependencies_to_install[@]} -yqq # intentional word splitting
+  fi
+}
+
+install_fedora_dep() {
+  local -r build_dependencies=(
+    git git-lfs gcc cmake ninja-build
+    python3-devel libxml2-devel xz-devel libedit-devel python3-sphinx swig
+  )
+
+  local dependencies_to_install=()
+  for dependency in "${build_dependencies[@]}"; do
+    local installed_pkg="$(dnf list installed "${dependency}" -q | cut -d' ' -f1 | grep "${dependency}")"
+    if [ "${installed_pkg}" = "" ]; then
+      # shellcheck disable=SC2206
+      dependencies_to_install=(${dependencies_to_install[@]} "${dependency}")
+    fi
+  done
+
+  if [ "${#dependencies_to_install[@]}" -gt 0 ]; then
+    echo "Installing LLVM build dependencies:"
+    # shellcheck disable=SC2068
+    sudo dnf install ${dependencies_to_install[@]} -y # intentional word splitting
+  fi
+}
+
+check_requirements() {
+  local -r distro="$(cat /etc/os-release | grep "^ID=" | cut -d'=' -f2-)"
+
+  # Ubuntu dependencies
+  if [ "$(echo "${distro}" | grep -i ubuntu)" != "" ]; then
+    install_ubuntu_dep
+  fi
+
+  # Fedora dependencies
+  if [ "$(echo "${distro}" | grep -i fedora)" != "" ]; then
+    install_fedora_dep
   fi
 
   if [ ! -d "${git_dir:?}" ]; then
@@ -105,6 +144,7 @@ update_project() {
     git fetch origin "${branch}"
     git clean -fdx
     git reset --hard origin/"${branch}"
+    git revert 2edb89c746848c52964537268bf03e7906bf2542 # temp fix for Clang 14 Lexer regression
   )
 }
 
@@ -113,16 +153,19 @@ install_llvm() {
   cd "${llvm_build_dir}" || error "Failed to change dir to: ${llvm_build_dir}"
 
   rm -rf ./*
-  if [ -n "${LLVM_FIRST_RUN}" ]; then
+  if [ ${LLVM_BUILD_STAGE} = 1 ]; then
     cmake "${llvm_source_dir:?}/llvm" \
       -DCMAKE_BUILD_TYPE=Release \
-      -DLLVM_ENABLE_PROJECTS:STRING="clang;lld" \
+      -DLLVM_ENABLE_PROJECTS:STRING="clang;lld;compiler-rt;bolt" \
       -DCMAKE_C_COMPILER=/usr/bin/gcc \
       -DCMAKE_CXX_COMPILER=/usr/bin/g++ \
       -DCMAKE_RANLIB=/usr/bin/ranlib \
       -DCMAKE_AR=/usr/bin/ar \
       -DLLVM_TARGETS_TO_BUILD:STRING=Native \
       -DCMAKE_POLICY_DEFAULT_CMP0069=NEW \
+      -DCOMPILER_RT_BUILD_SANITIZERS=OFF \
+      -DCOMPILER_RT_BUILD_XRAY=OFF \
+      -DCOMPILER_RT_BUILD_LIBFUZZER=OFF \
       -DLLVM_ENABLE_RTTI=ON \
       -DLLVM_INCLUDE_TESTS=OFF \
       -DLLVM_INCLUDE_EXAMPLES=OFF \
@@ -131,19 +174,21 @@ install_llvm() {
       -DPYTHON_EXECUTABLE:FILEPATH=/usr/bin/python3 \
       -DCMAKE_INSTALL_PREFIX="${first_stage_install_prefix:?}" \
       -G Ninja
-  else
+  fi
+
+  if [ ${LLVM_BUILD_STAGE} = 2 ]; then
     cmake "${llvm_source_dir:?}/llvm" \
       -DCMAKE_BUILD_TYPE=Release \
-      -DLLVM_ENABLE_PROJECTS:STRING="clang;clang-tools-extra;compiler-rt;lld;lldb" \
+      -DLLVM_ENABLE_PROJECTS:STRING="clang;clang-tools-extra;compiler-rt;lld;lldb;bolt" \
       -DCMAKE_C_COMPILER="${first_stage_install_prefix:?}/bin/clang" \
       -DCMAKE_CXX_COMPILER="${first_stage_install_prefix:?}/bin/clang++" \
       -DCMAKE_RANLIB="${first_stage_install_prefix:?}/bin/llvm-ranlib" \
       -DCMAKE_AR="${first_stage_install_prefix:?}/bin/llvm-ar" \
       -DCMAKE_CXX_FLAGS="-O3 -mtune=native -march=native -m64 -mavx -fomit-frame-pointer" \
       -DCMAKE_C_FLAGS="-O3 -mtune=native -march=native -m64 -mavx -fomit-frame-pointer" \
-      -DCMAKE_EXE_LINKER_FLAGS="-Wl,--as-needed -Wl,--build-id=sha1" \
-      -DCMAKE_MODULE_LINKER_FLAGS="-Wl,--as-needed -Wl,--build-id=sha1" \
-      -DCMAKE_SHARED_LINKER_FLAGS="-Wl,--as-needed -Wl,--build-id=sha1" \
+      -DCMAKE_EXE_LINKER_FLAGS="-Wl,--as-needed -Wl,--build-id=sha1 -Wl,--emit-relocs" \
+      -DCMAKE_MODULE_LINKER_FLAGS="-Wl,--as-needed -Wl,--build-id=sha1 -Wl,--emit-relocs" \
+      -DCMAKE_SHARED_LINKER_FLAGS="-Wl,--as-needed -Wl,--build-id=sha1 -Wl,--emit-relocs" \
       -DLLVM_TARGETS_TO_BUILD:STRING=Native \
       -DENABLE_LINKER_BUILD_ID=ON \
       -DLLVM_BUILD_LLVM_DYLIB=ON \
@@ -157,6 +202,7 @@ install_llvm() {
       -DLLVM_BUILD_TESTS=OFF \
       -DLLVM_BUILD_EXAMPLES=OFF \
       -DPYTHON_EXECUTABLE:FILEPATH=/usr/bin/python3 \
+      -DLLVM_INSTALL_UTILS=ON \
       -DCMAKE_INSTALL_PREFIX="${install_prefix:?}" \
       -C "${llvm_source_dir}/clang/cmake/caches/PGO.cmake" \
       -G Ninja
@@ -166,7 +212,7 @@ install_llvm() {
 
   ninja -j${jobs} install && rm -rf "${llvm_build_dir:?}"
 
-  if [ -n "${LLVM_FIRST_RUN}" ]; then
+  if [ -n "${LLVM_BUILD_STAGE}" ]; then
     check_llvm_executable "${first_stage_install_prefix:?}/bin/clang"
     check_llvm_executable "${first_stage_install_prefix:?}/bin/clang++"
   else
@@ -209,9 +255,9 @@ build_llvm() {
 main() {
   check_requirements
   update_project "${llvm_source_dir:?}" "${llvm_branch:?}"
-  LLVM_FIRST_RUN=1  build_llvm "$@"
-  LLVM_FIRST_RUN='' build_llvm "$@"
-#  build_iwyu
+  LLVM_BUILD_STAGE=1  build_llvm "$@"
+  LLVM_BUILD_STAGE=2 build_llvm "$@"
+#  build_iwyu || :
 
   echo
   echo "Finished building:"
