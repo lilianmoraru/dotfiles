@@ -2,6 +2,10 @@
 
 set -euo pipefail
 
+# Vars set by getopts
+self_pgo=false
+manual_pgo_build_script_path=""
+
 # General vars
 jobs="$(echo $(( $(nproc) * 3/4 )) | cut -d '.' -f1)"
 git_dir="${HOME:?}/git"
@@ -144,7 +148,7 @@ update_project() {
     git fetch origin "${branch}"
     git clean -fdx
     git reset --hard origin/"${branch}"
-    git revert 2edb89c746848c52964537268bf03e7906bf2542 # temp fix for Clang 14 Lexer regression
+    git revert --no-edit 2edb89c746848c52964537268bf03e7906bf2542 # temp fix for Clang 14 Lexer regression
   )
 }
 
@@ -263,5 +267,40 @@ main() {
   echo "Finished building:"
   "${install_prefix:?}/bin/clang++" --version
 }
+
+usage() {
+  printf "%s <option>\n\n" "$(basename "${0}")"
+  printf "option:\n"
+  printf "\t-s\n\t  Self PGO. Optimize Clang by compiling Clang itself with the instrumented code\n\n"
+  printf "\t-m\n\t  Manual PGO. Pass a project build script that uses env variables CC/CXX to be used to optimize Clang\n\n"
+}
+
+if getopts ":sm:" opt; then
+  case $opt in
+    s)
+      self_pgo=true
+      ;;
+    m)
+      manual_pgo_build_script_path="$(readlink -m "$OPTARG")"
+      if [ ! -x "${manual_pgo_build_script_path}" ]; then
+        error "\"${manual_pgo_build_script_path}\" is not an executable file/script"
+      fi
+
+      error "Manual PGO is not supported yet"
+      ;;
+    :)
+      error "-$OPTARG requires a path to a build script"
+      ;;
+    \?)
+      usage
+      exit 1
+      ;;
+  esac
+fi
+
+if [ $OPTIND -eq 1 ]; then
+    usage
+    exit 1
+fi
 
 main "$@"
