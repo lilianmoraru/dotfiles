@@ -12,10 +12,10 @@ git_dir="${HOME:?}/git"
 install_prefix_root="${HOME:?}/.tools"
 
 # LLVM vars
-LLVM_BRANCH=main # temporary, can comment out
+# LLVM_BRANCH=main # temporary, can comment out
 llvm_source_dir="${git_dir}/llvm"
 llvm_build_dir="${git_dir}/llvm-build"
-llvm_branch="${LLVM_BRANCH:-release/13.x}"
+llvm_branch="${LLVM_BRANCH:-release/15.x}"
 first_stage_install_prefix="${install_prefix_root:?}/llvm-stage1"
 second_stage_install_prefix="${install_prefix_root:?}/llvm-stage2" # instrumented build
 install_prefix="${install_prefix_root:?}/llvm"
@@ -41,6 +41,7 @@ check_llvm_executable() {
 }
 
 install_ubuntu_dep() {
+  #TODO, potentially needs(has to check the newest GCC available in the system): libstdc++-12-dev
   local -r build_dependencies=(
     git git-lfs gcc g++ build-essential cmake ninja-build
     libpython3-dev libxml2-dev liblzma-dev libedit-dev python3-sphinx swig
@@ -87,6 +88,7 @@ check_requirements() {
   local -r distro="$(cat /etc/os-release | grep "^ID=" | cut -d'=' -f2-)"
 
   # Ubuntu dependencies
+  #!TODO, should use: cat /etc/os-release | grep ^ID_LIKE= | cut -d '=' -f2 | tr -d '\"'
   if [ "$(echo "${distro}" | grep -i ubuntu)" != "" ]; then
     install_ubuntu_dep
   fi
@@ -148,7 +150,6 @@ update_project() {
     git fetch origin "${branch}"
     git clean -fdx
     git reset --hard origin/"${branch}"
-    git revert --no-edit 2edb89c746848c52964537268bf03e7906bf2542 # temp fix for Clang 14 Lexer regression
   )
 }
 
@@ -184,6 +185,7 @@ install_llvm() {
     cmake "${llvm_source_dir:?}/llvm" \
       -DCMAKE_BUILD_TYPE=Release \
       -DLLVM_ENABLE_PROJECTS:STRING="clang;clang-tools-extra;compiler-rt;lld;lldb;bolt" \
+      -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
       -DCMAKE_C_COMPILER="${first_stage_install_prefix:?}/bin/clang" \
       -DCMAKE_CXX_COMPILER="${first_stage_install_prefix:?}/bin/clang++" \
       -DCMAKE_RANLIB="${first_stage_install_prefix:?}/bin/llvm-ranlib" \
@@ -201,6 +203,7 @@ install_llvm() {
       -DLLVM_ENABLE_RTTI=ON \
       -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
       -DCMAKE_POLICY_DEFAULT_CMP0069=NEW \
+      -DCMAKE_POLICY_DEFAULT_CMP0114=NEW \
       -DLLVM_INCLUDE_TESTS=OFF \
       -DLLVM_INCLUDE_EXAMPLES=OFF \
       -DLLVM_BUILD_TESTS=OFF \
