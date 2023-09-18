@@ -11,7 +11,7 @@ error() {
 
 check_and_install_requirements() {
   local -r package_dependencies=(
-    git stow zsh zsh-common zsh-doc python fonts-hack-ttf
+    git stow zsh zsh-common zsh-doc python3 fonts-hack-ttf
     cmake pkg-config libfreetype6-dev libfontconfig1-dev libxcb-xfixes0-dev python3
     dkms libsecret-1-0 libsecret-1-dev libssl-dev
   )
@@ -44,15 +44,22 @@ setup_env() {
 }
 
 setup_cli() {
-  stow zsh
-  stow git
+  stow --adopt zsh
+  #stow git
   chsh -s $(which zsh)
   # setup autojump
+  # git clone https://github.com/wting/autojump.git
+  # cd autojump
+  # ./install.py or ./uninstall.py
+  #
   # setup antigen
+  # curl -L git.io/antigen > antigen.zsh
+  #
   # setup alacritty
   # sudo update-alternatives --install /usr/bin/x-terminal-emulator x-terminal-emulator /usr/bin/alacritty 50
   # rust setup: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-  # setup libsecret
+  # setup libsecret:
+  # https://www.softwaredeveloper.blog/git-credential-storage-libsecret#libsecret-git-credential-storage-by-gnome
 }
 
 setup() {
