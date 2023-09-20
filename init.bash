@@ -47,19 +47,24 @@ setup_cli() {
   stow --adopt zsh
   #stow git
   chsh -s $(which zsh)
-  # setup autojump
+  # setup autojump:
   # git clone https://github.com/wting/autojump.git
   # cd autojump
   # ./install.py or ./uninstall.py
   #
-  # setup antigen
+  # setup antigen:
   # curl -L git.io/antigen > antigen.zsh
   #
-  # setup alacritty
+  # setup alacritty:
   # sudo update-alternatives --install /usr/bin/x-terminal-emulator x-terminal-emulator /usr/bin/alacritty 50
   # rust setup: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+  #
   # setup libsecret:
   # https://www.softwaredeveloper.blog/git-credential-storage-libsecret#libsecret-git-credential-storage-by-gnome
+  #
+  # build ninja-build:
+  # cmake -Bbuild -H. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-O3 -mtune=native -march=native -m64 -mavx -fomit-frame-pointer"
+  #
 }
 
 setup() {

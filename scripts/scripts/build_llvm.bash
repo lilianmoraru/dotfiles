@@ -15,7 +15,7 @@ install_prefix_root="${HOME:?}/.tools"
 # LLVM_BRANCH=main # temporary, can comment out
 llvm_source_dir="${git_dir}/llvm"
 llvm_build_dir="${git_dir}/llvm-build"
-llvm_branch="${LLVM_BRANCH:-release/15.x}"
+llvm_branch="${LLVM_BRANCH:-release/17.x}"
 first_stage_install_prefix="${install_prefix_root:?}/llvm-stage1"
 second_stage_install_prefix="${install_prefix_root:?}/llvm-stage2" # instrumented build
 install_prefix="${install_prefix_root:?}/llvm"
@@ -42,6 +42,7 @@ check_llvm_executable() {
 
 install_ubuntu_dep() {
   #TODO, potentially needs(has to check the newest GCC available in the system): libstdc++-12-dev
+  # gcc_version="$(apt show -q libstdc++6 | grep 'Source: gcc' | cut -d - -f2)"
   local -r build_dependencies=(
     git git-lfs gcc g++ build-essential cmake ninja-build
     libpython3-dev libxml2-dev liblzma-dev libedit-dev python3-sphinx swig
@@ -85,7 +86,7 @@ install_fedora_dep() {
 }
 
 check_requirements() {
-  local -r distro="$(cat /etc/os-release | grep "^ID=" | cut -d'=' -f2-)"
+  local -r distro="$(cat /etc/os-release | grep ^ID_LIKE= | cut -d '=' -f2 | tr -d '\"')"
 
   # Ubuntu dependencies
   #!TODO, should use: cat /etc/os-release | grep ^ID_LIKE= | cut -d '=' -f2 | tr -d '\"'
@@ -94,7 +95,7 @@ check_requirements() {
   fi
 
   # Fedora dependencies
-  if [ "$(echo "${distro}" | grep -i fedora)" != "" ]; then
+  if [ "$(echo "${distro}" | grep -i rhel)" != "" ]; then
     install_fedora_dep
   fi
 
@@ -184,8 +185,8 @@ install_llvm() {
   if [ ${LLVM_BUILD_STAGE} = 2 ]; then
     cmake "${llvm_source_dir:?}/llvm" \
       -DCMAKE_BUILD_TYPE=Release \
-      -DLLVM_ENABLE_PROJECTS:STRING="clang;clang-tools-extra;compiler-rt;lld;lldb;bolt" \
-      -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
+      -DLLVM_ENABLE_PROJECTS:STRING="clang;clang-tools-extra;lld;lldb;bolt" \
+      -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind" \
       -DCMAKE_C_COMPILER="${first_stage_install_prefix:?}/bin/clang" \
       -DCMAKE_CXX_COMPILER="${first_stage_install_prefix:?}/bin/clang++" \
       -DCMAKE_RANLIB="${first_stage_install_prefix:?}/bin/llvm-ranlib" \
