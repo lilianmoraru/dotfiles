@@ -51,8 +51,6 @@ antigen use oh-my-zsh
 # Bundles
 antigen bundle git
 antigen bundle command-not-found
-antigen bundle cargo
-antigen bundle rust
 antigen bundle autojump
 
 antigen bundle Tarrasch/zsh-autoenv

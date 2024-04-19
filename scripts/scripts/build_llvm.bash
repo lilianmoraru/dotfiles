@@ -15,14 +15,14 @@ install_prefix_root="${HOME:?}/.tools"
 # LLVM_BRANCH=main # temporary, can comment out
 llvm_source_dir="${git_dir}/llvm"
 llvm_build_dir="${git_dir}/llvm-build"
-llvm_branch="${LLVM_BRANCH:-release/17.x}"
+llvm_branch="${LLVM_BRANCH:-release/18.x}"
 first_stage_install_prefix="${install_prefix_root:?}/llvm-stage1"
 second_stage_install_prefix="${install_prefix_root:?}/llvm-stage2" # instrumented build
 install_prefix="${install_prefix_root:?}/llvm"
 
 # Include What You Use vars
 iwyu_source_dir="${git_dir:?}/iwyu"
-iwyu_branch="${IWYU_BRANCH:-clang_13}"
+iwyu_branch="${IWYU_BRANCH:-clang_18}"
 
 error() {
   echo "${*:?}" > /dev/stderr
@@ -41,8 +41,6 @@ check_llvm_executable() {
 }
 
 install_ubuntu_dep() {
-  #TODO, potentially needs(has to check the newest GCC available in the system): libstdc++-12-dev
-  # gcc_version="$(apt show -q libstdc++6 | grep 'Source: gcc' | cut -d - -f2)"
   local -r build_dependencies=(
     git git-lfs gcc g++ build-essential cmake ninja-build
     libpython3-dev libxml2-dev liblzma-dev libedit-dev python3-sphinx swig
@@ -60,6 +58,13 @@ install_ubuntu_dep() {
     echo "Installing LLVM build dependencies:"
     # shellcheck disable=SC2068
     sudo apt install ${dependencies_to_install[@]} -yqq # intentional word splitting
+  fi
+
+  # Install the appropriate/matching `libstdc++` dev package
+  local -r gcc_version="$(apt show -q libstdc++6 2>/dev/null | grep 'Source: gcc' | cut -d - -f2)"
+  local -r libstdcpp_dev_package="libstdc++-${gcc_version}-dev"
+  if ! dpkg -l "${libstdcpp_dev_package}" | cut -d ' ' -f1 | grep "ii" >& /dev/null; then
+    sudo apt install "${libstdcpp_dev_package}" -yqq
   fi
 }
 
@@ -265,7 +270,7 @@ main() {
   update_project "${llvm_source_dir:?}" "${llvm_branch:?}"
   LLVM_BUILD_STAGE=1  build_llvm "$@"
   LLVM_BUILD_STAGE=2 build_llvm "$@"
-#  build_iwyu || :
+  build_iwyu || :
 
   echo
   echo "Finished building:"
