@@ -42,7 +42,7 @@ check_llvm_executable() {
 
 install_ubuntu_dep() {
   local -r build_dependencies=(
-    git git-lfs gcc g++ build-essential cmake ninja-build
+    git git-lfs gcc g++ build-essential cmake ninja-build binutils-dev
     libpython3-dev libxml2-dev liblzma-dev libedit-dev python3-sphinx swig
   )
 
@@ -70,7 +70,7 @@ install_ubuntu_dep() {
 
 install_fedora_dep() {
   local -r build_dependencies=(
-    git git-lfs gcc cmake ninja-build
+    git git-lfs gcc cmake ninja-build binutils-devel
     python3-devel libxml2-devel xz-devel libedit-devel python3-sphinx swig
   )
 
@@ -201,6 +201,7 @@ install_llvm() {
       -DCMAKE_EXE_LINKER_FLAGS="-Wl,--as-needed -Wl,--build-id=sha1 -Wl,--emit-relocs" \
       -DCMAKE_MODULE_LINKER_FLAGS="-Wl,--as-needed -Wl,--build-id=sha1 -Wl,--emit-relocs" \
       -DCMAKE_SHARED_LINKER_FLAGS="-Wl,--as-needed -Wl,--build-id=sha1 -Wl,--emit-relocs" \
+      -DLLVM_BINUTILS_INCDIR=/usr/include \
       -DLLVM_TARGETS_TO_BUILD:STRING=Native \
       -DENABLE_LINKER_BUILD_ID=ON \
       -DLLVM_BUILD_LLVM_DYLIB=ON \
