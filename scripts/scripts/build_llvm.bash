@@ -15,7 +15,7 @@ install_prefix_root="${HOME:?}/.tools"
 # LLVM_BRANCH=main # temporary, can comment out
 llvm_source_dir="${git_dir}/llvm"
 llvm_build_dir="${git_dir}/llvm-build"
-llvm_branch="${LLVM_BRANCH:-release/18.x}"
+llvm_branch="${LLVM_BRANCH:-release/19.x}"
 first_stage_install_prefix="${install_prefix_root:?}/llvm-stage1"
 second_stage_install_prefix="${install_prefix_root:?}/llvm-stage2" # instrumented build
 install_prefix="${install_prefix_root:?}/llvm"
@@ -269,9 +269,9 @@ build_llvm() {
 main() {
   check_requirements
   update_project "${llvm_source_dir:?}" "${llvm_branch:?}"
-  LLVM_BUILD_STAGE=1  build_llvm "$@"
+  LLVM_BUILD_STAGE=1 build_llvm "$@"
   LLVM_BUILD_STAGE=2 build_llvm "$@"
-  build_iwyu || :
+  #build_iwyu || :
 
   echo
   echo "Finished building:"
